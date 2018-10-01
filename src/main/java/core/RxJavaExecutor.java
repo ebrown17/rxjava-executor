@@ -1,3 +1,4 @@
+package core;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
@@ -33,7 +34,7 @@ public class RxJavaExecutor {
   private ConcurrentHashMap<Integer, Disposable> removableDisposableMap = new ConcurrentHashMap<Integer, Disposable>();
 
   /**
-   * RxJavaExecutor is a wrapper for interacting with Rxjava. By default all methods will run on the
+   * RxJavaExecutor is a wrapper for interacting with RxJava schedulers. By default all methods will run on the
    * executor being used and observed on the main scheduler this class creates. The scheduler that
    * observes completed tasks can be overridden.
    * 
@@ -89,9 +90,11 @@ public class RxJavaExecutor {
         .observeOn(mainScheduler).subscribe(onNext -> logger.trace("scheduleSingleCallable {} ", onNext), error -> {
           logger.error("scheduleSingleCallable error {} ", error.getMessage());
           idGenerator.recycleId(id);
+          removeCompletedDisposable(id);
         }, () -> {
           logger.debug("scheduleSingleCallable Completed");
           idGenerator.recycleId(id);
+          removeCompletedDisposable(id);
         });
 
     removableDisposableMap.put(id, disposable);
@@ -118,9 +121,11 @@ public class RxJavaExecutor {
         .observeOn(mainScheduler).subscribe(onNext -> logger.trace("scheduleSingleRunnable {} ", onNext), error -> {
           logger.error("scheduleSingleRunnable error {} ", error.getMessage());
           idGenerator.recycleId(id);
+          removeCompletedDisposable(id);
         }, () -> {
           logger.debug("scheduleSingleRunnable Completed");
           idGenerator.recycleId(id);
+          removeCompletedDisposable(id);
         });
 
     removableDisposableMap.put(id, disposable);
@@ -149,9 +154,11 @@ public class RxJavaExecutor {
             .observeOn(mainScheduler).subscribe(i -> logger.trace("scheduleFixedRateRunnable id: {}", id), error -> {
               logger.error("scheduleFixedRateRunnable error {}", error.getMessage());
               idGenerator.recycleId(id);
+              removeCompletedDisposable(id);
             }, () -> {
               logger.debug("scheduleFixedRateRunnable Completed");
               idGenerator.recycleId(id);
+              removeCompletedDisposable(id);
             });
 
     removableDisposableMap.put(id, disposable);
@@ -185,9 +192,11 @@ public class RxJavaExecutor {
             .observeOn(mainScheduler).subscribe(i -> logger.trace("scheduleFixedRateCallable {}", i), error -> {
               logger.error("scheduleFixedRateCallable error {}", error.getMessage());
               idGenerator.recycleId(id);
+              removeCompletedDisposable(id);
             }, () -> {
               logger.debug("scheduleFixedRateCallable Completed");
               idGenerator.recycleId(id);
+              removeCompletedDisposable(id);
             });
 
     removableDisposableMap.put(id, disposable);
@@ -234,7 +243,7 @@ public class RxJavaExecutor {
 
   /**
    * 
-   * @return id pool size
+   * @return id pool size returned by generator
    */
   public Integer getIdPoolSize() {
     return idGenerator.getIdentityPoolSize();
@@ -242,12 +251,19 @@ public class RxJavaExecutor {
 
   /**
    * 
-   * @return ids in use size. 
+   * @return ids in use size returned by generator
    */
   public Integer getIdsInUseSize() {
     return idGenerator.getIdentitiesInUseSize();
   }
 
+  private void removeCompletedDisposable(Integer id) {
+    Disposable dis = removableDisposableMap.remove(id);
+    if (dis != null) {
+      dis.dispose();
+    }
+  }
+  
   /**
    * @param id returned by the disposable that should be cancelled.
    * @return true if disposable was cancelled otherwise false.
