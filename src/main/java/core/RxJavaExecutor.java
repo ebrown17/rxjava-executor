@@ -92,7 +92,7 @@ public class RxJavaExecutor {
           idGenerator.recycleId(id);
           removeCompletedDisposable(id);
         }, () -> {
-          logger.debug("scheduleSingleCallable Completed");
+          logger.trace("scheduleSingleCallable Completed");
           idGenerator.recycleId(id);
           removeCompletedDisposable(id);
         });
@@ -123,7 +123,7 @@ public class RxJavaExecutor {
           idGenerator.recycleId(id);
           removeCompletedDisposable(id);
         }, () -> {
-          logger.debug("scheduleSingleRunnable Completed");
+          logger.trace("scheduleSingleRunnable Completed");
           idGenerator.recycleId(id);
           removeCompletedDisposable(id);
         });
@@ -156,7 +156,7 @@ public class RxJavaExecutor {
               idGenerator.recycleId(id);
               removeCompletedDisposable(id);
             }, () -> {
-              logger.debug("scheduleFixedRateRunnable Completed");
+              logger.trace("scheduleFixedRateRunnable Completed");
               idGenerator.recycleId(id);
               removeCompletedDisposable(id);
             });
@@ -194,7 +194,7 @@ public class RxJavaExecutor {
               idGenerator.recycleId(id);
               removeCompletedDisposable(id);
             }, () -> {
-              logger.debug("scheduleFixedRateCallable Completed");
+              logger.trace("scheduleFixedRateCallable Completed");
               idGenerator.recycleId(id);
               removeCompletedDisposable(id);
             });
