@@ -296,16 +296,4 @@ public class RxJavaExecutor {
     logger.info("< {}", where);
   }
 
-  public static void main(String[] args) {
-    RxJavaExecutor tester = new RxJavaExecutor("main", 1, null);
-    Integer id = tester.scheduleFixedRateRunnable(0, 1000, () -> tester.printWhereRan("Computation runnable"));
-    Integer id2 = tester.scheduleFixedRateCallable(0, 1000, () -> {
-      tester.printWhereRan("Computation callable");
-      return 0;
-    });
-    tester.scheduleSingleCallable(3000, () -> tester.cancelScheduledDisposable(id));
-    tester.scheduleSingleCallable(3000, () -> tester.cancelScheduledDisposable(id2));
-    tester.scheduleSingleRunnable(5000, () -> tester.shutdownExecutor());
-  }
-
 }

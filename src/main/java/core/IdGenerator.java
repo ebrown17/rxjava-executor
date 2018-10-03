@@ -73,24 +73,5 @@ public class IdGenerator {
   public Integer getIdentitiesInUseSize() {
     return identityInUse.size();
   }
-  
-  public static void main(String[] args) {
-    IdGenerator test = new IdGenerator("Test");
-    System.out.println(test.toString());
-    for(int i=0;i<1000; i++) {
-      test.getNewId();
-    }
-    System.out.println(test.toString());
-    for(int i=0;i<1000; i++) {
-      test.getNewId();
-    }
-    System.out.println(test.toString());
-    Integer h =test.getNewId();
-    System.out.println(test.toString());
-    test.recycleId(h);
-    System.out.println(test.toString());
-    test.getNewId();
-    test.getNewId();
-  }
 
 }
