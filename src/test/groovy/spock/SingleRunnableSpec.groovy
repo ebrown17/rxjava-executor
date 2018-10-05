@@ -30,158 +30,6 @@ class SingleRunnableSpec extends Specification {
     executor.getSingleScheduler() != null
   }
 
-  def "Starts 10 single runnables and has expected values"(){
-    when:
-    10.times { t ->
-      executor.scheduleSingleRunnable(3000, {t == t })
-    }
-
-    then:
-    executor.getIdsInUseSize() == 10
-    executor.countOfScheduledDisposables() == 10
-    executor.getIdPoolSize() == 990
-  }
-
-  def "Starts 10 single runnables and after they finish has expected values"(){
-    when:
-    10.times { t ->
-      executor.scheduleSingleRunnable(1000, {t == t })
-    }
-
-    then:
-    Thread.sleep(1500)
-    executor.getIdsInUseSize() == 0
-    executor.countOfScheduledDisposables() == 0
-    executor.getIdPoolSize() == 1000
-  }
-
-  def "Starts 10 single runnables, cancels half, and has expected values"(){
-    when:
-    10.times { t ->
-      executor.scheduleSingleRunnable(4000, {t == t })
-    }
-
-    Thread.sleep(2000)
-    1.upto(5,{ t ->
-      executor.cancelScheduledDisposable(t)
-    })
-
-    then:
-    executor.getIdsInUseSize() == 5
-    executor.countOfScheduledDisposables() == 5
-    executor.getIdPoolSize() == 995
-  }
-
-  def "Starts 1000 single runnables and has expected values"(){
-    when:
-    1000.times { t ->
-      executor.scheduleSingleRunnable(30000, {t == t })
-    }
-
-    then:
-    executor.getIdsInUseSize() == 1000
-    executor.countOfScheduledDisposables() == 1000
-    executor.getIdPoolSize() == 0
-  }
-
-  def "Starts 1000 single runnables and after they finish has expected values"(){
-    when:
-    1000.times { t ->
-      executor.scheduleSingleRunnable(1000, {t == t})
-    }
-
-    then:
-    Thread.sleep(3000)
-    executor.getIdsInUseSize() == 0
-    executor.countOfScheduledDisposables() == 0
-    executor.getIdPoolSize() == 1000
-  }
-
-  def "Starts 1500 single runnables and has expected values"(){
-    when:
-    1500.times { t ->
-      executor.scheduleSingleRunnable(30000, {t == t })
-    }
-
-    then:
-    executor.getIdsInUseSize() == 1500
-    executor.countOfScheduledDisposables() == 1500
-    executor.getIdPoolSize() == 500
-  }
-
-  def "Starts 1500 single runnables and after they finish has expected values"(){
-    when:
-    1500.times { t ->
-      executor.scheduleSingleRunnable(1000, {t == t })
-    }
-
-    then:
-    Thread.sleep(3000)
-    executor.getIdsInUseSize() == 0
-    executor.countOfScheduledDisposables() == 0
-    executor.getIdPoolSize() == 2000
-  }
-
-  def "Starts 1500 single runnables, cancels half, and has expected values"(){
-    when:
-    1500.times { t ->
-      executor.scheduleSingleRunnable(4000, {t == t })
-    }
-
-    Thread.sleep(2000)
-    1.upto(750,{ t ->
-      executor.cancelScheduledDisposable(t)
-    })
-
-    then:
-    executor.getIdsInUseSize() == 750
-    executor.countOfScheduledDisposables() == 750
-    executor.getIdPoolSize() == 1250
-  }
-
-  def "Starts 20001 single runnables and has expected values"(){
-    when:
-    20001.times { t ->
-      executor.scheduleSingleRunnable(30000, {t == t })
-    }
-
-    then:
-    executor.getIdsInUseSize() == 20001
-    executor.countOfScheduledDisposables() == 20001
-    executor.getIdPoolSize() == 999
-  }
-
-  def "Starts 20001 single runnables and after they finish has expected values"(){
-    when:
-    20001.times { t ->
-      executor.scheduleSingleRunnable(1000, {t == t})
-    }
-
-    then:
-    Thread.sleep(3000)
-    executor.getIdsInUseSize() == 0
-    executor.countOfScheduledDisposables() == 0
-    executor.getIdPoolSize() == 21000
-  }
-
-  def "Starts 20001 single runnables, cancels half, and has expected values"(){
-    when:
-    20001.times { t ->
-      executor.scheduleSingleRunnable(4000, { t == t })
-    }
-
-    Thread.sleep(2000)
-    1.upto(10001,{ t ->
-      executor.cancelScheduledDisposable(t)
-    })
-
-    then:
-    executor.getIdsInUseSize() == 10000
-    executor.countOfScheduledDisposables() == 10000
-    executor.getIdPoolSize() == 11000
-  }
-
-  @IgnoreRest
   def "Starts a large amount of single runnables and has expected values before any complete"(){
     expect:
     ids.times { t ->
@@ -193,22 +41,113 @@ class SingleRunnableSpec extends Specification {
     executor.countOfScheduledDisposables() == ids
     executor.getIdPoolSize() == expectedPoolSize
 
+    where:
+    ids   | _
+    1     | _
+    5     | _
+    25    | _
+    27    | _
+    49    | _
+    500   | _
+    766   | _
+    999   | _
+    1000  | _
+    1001  | _
+    1399  | _
+    1500  | _
+    1732  | _
+    1999  | _
+    2000  | _
+    2001  | _
+    2998  | _
+    20001 | _
+    29999 | _
+  }
+  
+  def "Starts a large amount of single runnables; cancels some and has expected values before any complete"(){
+    expect:
+    
+    ids.times { t ->
+      executor.scheduleSingleRunnable(3000, {t == t })
+    }
+    
+    1.upto(cancel,{ t ->
+      executor.cancelScheduledDisposable(t)
+    })
+    
+    def expectedPoolSize =(ids % 1000) == 0 ? 1000 :(1000 - (ids % 1000)) + cancel
+    println "ids ${ids} canceled: ${cancel} size: ${expectedPoolSize}"
+    executor.getIdsInUseSize() == ids - cancel
+    executor.countOfScheduledDisposables() == ids - cancel
+    executor.getIdPoolSize() == expectedPoolSize
 
     where:
-    ids | _
-    10 | _
-    25 | _
-    87 | _
-    99 | _
-    999 | _
-    1 | _
-    750 | _
-    1500 | _
-    2000 | _
-    1001 | _
-    1500 | _
-    1750 | _
-    9000 | _
+    ids   | cancel
+    1     | 1
+    5     | 3
+    25    | 12
+    27    | 26
+    49    | 49
+    500   | 251
+    766   | 300
+    999   | 666
+    1000  | 1000
+    1001  | 1000
+    1399  | 1223
+    1500  | 142
+    1732  | 1682
+    1999  | 1997
+    2000  | 1000
+    2001  | 1
+    2998  | 767
+    20001 | 10001
+    29999 | 20000
+  }
+  
+  def "Starts a large amount of single runnables; and after they complete they have expected values"(){
+    expect:
+    ids.times { t ->
+      executor.scheduleSingleRunnable(100, {t == t })
+    }
+   
+    Thread.sleep(250)
+    def expectedPoolSize
+    
+    if(ids <=1000) {
+      expectedPoolSize = 1000
+    }
+    else {
+     expectedPoolSize = (Math.floor(ids/1000) as int) * 1000
+     
+     if(ids % 1000 != 0) {
+       expectedPoolSize +=1000
+     }
+    }
+    
+    executor.getIdsInUseSize() == 0
+    executor.countOfScheduledDisposables() == 0
+    executor.getIdPoolSize() == expectedPoolSize
+
+    where:
+    ids   | _
+    1     | _
+    5     | _
+    25    | _
+    27    | _
+    49    | _
+    500   | _
+    766   | _
+    999   | _
+    1000  | _
+    1001  | _
+    1399  | _
+    1500  | _
+    1732  | _
+    1999  | _
+    2000  | _
+    2001  | _
+    2998  | _
     20001 | _
+    29999 | _
   }
 }
