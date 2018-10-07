@@ -1,9 +1,10 @@
-package core;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicInteger;
+package util;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class NamedThreadFactory implements ThreadFactory {
   private final Logger logger = LoggerFactory.getLogger("NamedThreadFactory");
@@ -12,7 +13,7 @@ public class NamedThreadFactory implements ThreadFactory {
   private final AtomicInteger threadNumber = new AtomicInteger(1);
   private final String namePrefix;
 
-  NamedThreadFactory(String name) throws NullPointerException {
+  public NamedThreadFactory(String name) throws NullPointerException {
     if (null == name) {
       logger.error("NamedThreadFactory recieved null string name ");
       throw new NullPointerException("NamedThreadFactory recieved null name");

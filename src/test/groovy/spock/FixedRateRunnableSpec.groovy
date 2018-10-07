@@ -1,10 +1,10 @@
-package groovy.spock;
+package spock
 
-import core.RxJavaExecutor;
-import spock.lang.Shared;
-import spock.lang.Specification;
+import core.RxJavaExecutor
+import spock.lang.Shared
+import spock.lang.Specification
 
-public class FixedRateRunnableSpec extends Specification {
+class FixedRateRunnableSpec extends Specification {
   
 @Shared executor
   
@@ -33,7 +33,7 @@ public class FixedRateRunnableSpec extends Specification {
     
     when:
     10.times { t ->
-      executor.scheduleFixedRateRunnable(0, 1000, {print t})
+      executor.scheduleFixedRateRunnable(0, 1000, { print t }, false)
     }
     
     then:
@@ -47,7 +47,7 @@ public class FixedRateRunnableSpec extends Specification {
     
     when:
     10.times { t ->
-      executor.scheduleFixedRateRunnable(0, 1000, {print "${t} "})
+      executor.scheduleFixedRateRunnable(0, 1000, { print "${t} " }, false)
     }
     
     Thread.sleep(2000)

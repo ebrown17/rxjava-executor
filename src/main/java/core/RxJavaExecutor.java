@@ -1,4 +1,5 @@
 package core;
+
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
@@ -19,6 +20,8 @@ import io.reactivex.internal.schedulers.IoScheduler;
 import io.reactivex.internal.schedulers.RxThreadFactory;
 import io.reactivex.internal.schedulers.SingleScheduler;
 import io.reactivex.schedulers.Schedulers;
+import util.IdGenerator;
+import util.NamedThreadFactory;
 
 public class RxJavaExecutor {
   private Logger logger;
@@ -34,7 +37,8 @@ public class RxJavaExecutor {
   private ConcurrentHashMap<Integer, Disposable> removableDisposableMap = new ConcurrentHashMap<Integer, Disposable>();
 
   /**
-   * RxJavaExecutor is a wrapper for interacting with RxJava schedulers. By default all methods will run on the
+   * RxJavaExecutor is a wrapper for interacting with RxJava schedulers. By default all methods will
+   * run on the
    * executor being used and observed on the main scheduler this class creates. The scheduler that
    * observes completed tasks can be overridden.
    * 
@@ -48,7 +52,7 @@ public class RxJavaExecutor {
 
   public RxJavaExecutor(String name, int numberOfThreads, Executor executorOverride) {
     logger = LoggerFactory.getLogger(name + "-RxJavaExecutor");
-    idGenerator = new IdGenerator(name);
+    idGenerator = new IdGenerator(name, 0, 0);
 
     if (executorOverride == null) {
       namedThreadFactory = new NamedThreadFactory(name);
@@ -81,21 +85,26 @@ public class RxJavaExecutor {
    *
    * @param delay time until the callable is called.
    * @param callable the callable to call
+   * @param blocking set to true if runnable is a blocking operation. Will use the ioScheduler rather
+   *        than the
+   *        computationScheduler. For network, database or file operations.
    * @return an Integer identifying the disposable returned by the Flowable. Can be used to cancel the
    *         scheduled callable.
+   * @throws Exception thrown when no more id's for disposables are available
    */
-  public Integer scheduleSingleCallable(long delay, Callable<? extends Object> callable) {
+  public Integer scheduleSingleCallable(long delay, Callable<? extends Object> callable, boolean blocking) throws Exception {
     Integer id = idGenerator.getNewId();
-    Disposable disposable = Flowable.timer(delay, TimeUnit.MILLISECONDS, computationScheduler).map(m -> callable.call())
-        .observeOn(mainScheduler).subscribe(onNext -> logger.trace("scheduleSingleCallable {} ", onNext), error -> {
-          logger.error("scheduleSingleCallable error {} ", error.getMessage());
-          idGenerator.recycleId(id);
-          removeCompletedDisposable(id);
-        }, () -> {
-          logger.trace("scheduleSingleCallable Completed");
-          idGenerator.recycleId(id);
-          removeCompletedDisposable(id);
-        });
+    Disposable disposable =
+            Flowable.timer(delay, TimeUnit.MILLISECONDS, blocking ? ioScheduler : computationScheduler).map(m -> callable.call())
+                    .observeOn(mainScheduler).subscribe(onNext -> logger.trace("scheduleSingleCallable {} ", onNext), error -> {
+              logger.error("scheduleSingleCallable error {} ", error.getMessage());
+              idGenerator.recycleId(id);
+              removeCompletedDisposable(id);
+            }, () -> {
+              logger.trace("scheduleSingleCallable Completed");
+              idGenerator.recycleId(id);
+              removeCompletedDisposable(id);
+            });
 
     removableDisposableMap.put(id, disposable);
 
@@ -110,15 +119,20 @@ public class RxJavaExecutor {
    * {@link io.reactivex.internal.schedulers.ComputationScheduler}
    * </p>
    *
-   * @param delay time until the callable is called.
+   * @param delay time until the runnable is run.
    * @param runnable the runnable to be run.
+   * @param blocking set to true if runnable is a blocking operation. Will use the ioScheduler rather
+   *        than the
+   *        computationScheduler. For network, database or file operations.
    * @return an Integer identifying the disposable returned by the Flowable. Can be used to cancel the
    *         scheduled runnable.
+   * @throws Exception thrown when no more id's for disposables are available
    */
-  public Integer scheduleSingleRunnable(long delay, Runnable runnable) {
+  public Integer scheduleSingleRunnable(long delay, Runnable runnable, boolean blocking) throws Exception {
     Integer id = idGenerator.getNewId();
-    Disposable disposable = Flowable.timer(delay, TimeUnit.MILLISECONDS, computationScheduler).doOnNext(m -> runnable.run())
-        .observeOn(mainScheduler).subscribe(onNext -> logger.trace("scheduleSingleRunnable {} ", onNext), error -> {
+    Disposable disposable = Flowable.timer(delay, TimeUnit.MILLISECONDS, blocking ? ioScheduler : computationScheduler)
+            .doOnNext(m -> runnable.run()).observeOn(mainScheduler)
+            .subscribe(onNext -> logger.trace("scheduleSingleRunnable {} ", onNext), error -> {
           logger.error("scheduleSingleRunnable error {} ", error.getMessage());
           idGenerator.recycleId(id);
           removeCompletedDisposable(id);
@@ -144,14 +158,19 @@ public class RxJavaExecutor {
    * @param delay time in milliseconds until the runnable should start
    * @param period the time in milliseconds between the runnable executing
    * @param runnable the runnable to be executed
+   * @param blocking set to true if runnable is a blocking operation. Will use the ioScheduler rather
+   *        than the
+   *        computationScheduler. For network, database or file operations.
    * @return an Integer identifying the disposable returned by the Flowable. Can be used to cancel the
    *         scheduled runnable.
+   * @throws Exception thrown when no more id's for disposables are available
    */
-  public Integer scheduleFixedRateRunnable(long delay, long period, Runnable runnable) {
+  public Integer scheduleFixedRateRunnable(long delay, long period, Runnable runnable, boolean blocking) throws Exception {
     Integer id = idGenerator.getNewId();
     Disposable disposable =
-        Flowable.interval(delay, period, TimeUnit.MILLISECONDS, computationScheduler).doOnNext(m -> runnable.run())
-            .observeOn(mainScheduler).subscribe(i -> logger.trace("scheduleFixedRateRunnable id: {}", id), error -> {
+            Flowable.interval(delay, period, TimeUnit.MILLISECONDS, blocking ? ioScheduler : computationScheduler)
+                    .doOnNext(m -> runnable.run()).observeOn(mainScheduler)
+                    .subscribe(i -> logger.trace("scheduleFixedRateRunnable id: {}", id), error -> {
               logger.error("scheduleFixedRateRunnable error {}", error.getMessage());
               idGenerator.recycleId(id);
               removeCompletedDisposable(id);
@@ -182,14 +201,20 @@ public class RxJavaExecutor {
    * @param delay time in milliseconds until the runnable should start
    * @param period the time in milliseconds between the runnable executing
    * @param callable the runnable to be executed
+   * @param blocking set to true if runnable is a blocking operation. Will use the ioScheduler rather
+   *        than the
+   *        computationScheduler. For network, database or file operations.
    * @return an Integer identifying the disposable returned by the Flowable. Can be used to cancel the
    *         scheduled callable.
+   * @throws Exception thrown when no more id's for disposables are available
    */
-  public Integer scheduleFixedRateCallable(long delay, long period, Callable<? extends Object> callable) {
+  public Integer scheduleFixedRateCallable(long delay, long period, Callable<? extends Object> callable, boolean blocking)
+          throws Exception {
     Integer id = idGenerator.getNewId();
     Disposable disposable =
-        Flowable.interval(delay, period, TimeUnit.MILLISECONDS, computationScheduler).map(m -> callable.call())
-            .observeOn(mainScheduler).subscribe(i -> logger.trace("scheduleFixedRateCallable {}", i), error -> {
+            Flowable.interval(delay, period, TimeUnit.MILLISECONDS, blocking ? ioScheduler : computationScheduler)
+                    .map(m -> callable.call()).observeOn(mainScheduler)
+                    .subscribe(i -> logger.trace("scheduleFixedRateCallable {}", i), error -> {
               logger.error("scheduleFixedRateCallable error {}", error.getMessage());
               idGenerator.recycleId(id);
               removeCompletedDisposable(id);
@@ -226,8 +251,8 @@ public class RxJavaExecutor {
   }
 
   /**
-   * 
-   * @return main Scheduler that all tasks are default observed on.
+   *
+   * @return main Scheduler that all tasks are observed on.
    */
   public Scheduler getMainScheduer() {
     return mainScheduler;
@@ -263,7 +288,7 @@ public class RxJavaExecutor {
       dis.dispose();
     }
   }
-  
+
   /**
    * @param id returned by the disposable that should be cancelled.
    * @return true if disposable was cancelled otherwise false.
@@ -292,8 +317,8 @@ public class RxJavaExecutor {
     namedExecutor.shutdown();
   }
 
-  private void printWhereRan(String where) {
-    logger.info("< {}", where);
+  private void logRunningThread() {
+    logger.info("logRunningThread: {}", Thread.currentThread().getName());
   }
 
 }

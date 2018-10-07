@@ -1,4 +1,4 @@
-package groovy.spock
+package spock
 
 
 import core.RxJavaExecutor
@@ -9,7 +9,8 @@ import spock.lang.Specification
 
 class SingleRunnableSpec extends Specification {
 
-  @Shared executor
+    @Shared
+    RxJavaExecutor executor
 
   def setup() {
     println "Setuping up new RxJavaExecutor"
@@ -33,7 +34,7 @@ class SingleRunnableSpec extends Specification {
   def "Starts a large amount of single runnables and has expected values before any complete"(){
     expect:
     ids.times { t ->
-      executor.scheduleSingleRunnable(3000, {t == t })
+        executor.scheduleSingleRunnable(3000, { t == t }, false)
     }
     def expectedPoolSize =(ids % 1000) == 0 ? 0 :(1000 - (ids % 1000))
 
@@ -63,18 +64,18 @@ class SingleRunnableSpec extends Specification {
     20001 | _
     29999 | _
   }
-  
+
   def "Starts a large amount of single runnables; cancels some and has expected values before any complete"(){
     expect:
-    
+
     ids.times { t ->
-      executor.scheduleSingleRunnable(3000, {t == t })
+        executor.scheduleSingleRunnable(3000, { t == t }, false)
     }
-    
+
     1.upto(cancel,{ t ->
       executor.cancelScheduledDisposable(t)
     })
-    
+
     def expectedPoolSize =(ids % 1000) == 0 ? 1000 :(1000 - (ids % 1000)) + cancel
     println "ids ${ids} canceled: ${cancel} size: ${expectedPoolSize}"
     executor.getIdsInUseSize() == ids - cancel
@@ -103,27 +104,27 @@ class SingleRunnableSpec extends Specification {
     20001 | 10001
     29999 | 20000
   }
-  
-  def "Starts a large amount of single runnables; and after they complete they have expected values"(){
+
+    def "Starts a large amount of single runnables; and after they complete they have expected values"() {
     expect:
     ids.times { t ->
-      executor.scheduleSingleRunnable(100, {t == t })
+        executor.scheduleSingleRunnable(100, { t == t }, false)
     }
-   
-    Thread.sleep(250)
+
+    Thread.sleep(500)
     def expectedPoolSize
-    
+
     if(ids <=1000) {
       expectedPoolSize = 1000
     }
     else {
-     expectedPoolSize = (Math.floor(ids/1000) as int) * 1000
-     
-     if(ids % 1000 != 0) {
-       expectedPoolSize +=1000
-     }
+        expectedPoolSize = (Math.floor(ids / 1000) as int) * 1000
+
+        if (ids % 1000 != 0) {
+            expectedPoolSize += 1000
+        }
     }
-    
+
     executor.getIdsInUseSize() == 0
     executor.countOfScheduledDisposables() == 0
     executor.getIdPoolSize() == expectedPoolSize
@@ -150,4 +151,23 @@ class SingleRunnableSpec extends Specification {
     20001 | _
     29999 | _
   }
+
+    def "Start max amount of runnables and has expected result"() {
+        when:
+        50000.times { t ->
+            executor.scheduleSingleRunnable(1000, { t == t }, false)
+        }
+        then:
+        notThrown(Exception)
+    }
+
+    def "Start greater than max amount of runnables and has expected result"() {
+        when:
+        50001.times { t ->
+            executor.scheduleSingleRunnable(1000, { t == t }, false)
+        }
+        then:
+        Exception e = thrown()
+        e.message == "Exception: No IDs are available."
+    }
 }
