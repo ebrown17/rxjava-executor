@@ -4,7 +4,7 @@ import core.RxJavaExecutor
 import spock.lang.Shared
 import spock.lang.Specification
 
-class FixedRateRunnableSpec extends Specification {
+class FixedRateCallableSpec extends Specification {
 
     @Shared
     RxJavaExecutor executor
@@ -29,10 +29,10 @@ class FixedRateRunnableSpec extends Specification {
         executor.getSingleScheduler() != null
     }
 
-    def "Starts a large amount of fixted rate runnables and has expected values"() {
+    def "Starts a large amount of fixted rate callables and has expected values"() {
         expect:
         ids.times { t ->
-            executor.scheduleFixedRateRunnable(0, 1000, { t == t }, false)
+            executor.scheduleFixedRateCallable(0, 1000, { t == t }, false)
         }
         def expectedPoolSize = (ids % 1000) == 0 ? 0 : (1000 - (ids % 1000))
 
@@ -63,11 +63,11 @@ class FixedRateRunnableSpec extends Specification {
         29999 | _
     }
 
-    def "Starts a large amount of fixed rate runnables; cancels some and has expected values after"() {
+    def "Starts a large amount of fixed rate callables; cancels some and has expected values after"() {
         expect:
 
         ids.times { t ->
-            executor.scheduleFixedRateRunnable(0, 3000, { t == t }, false)
+            executor.scheduleFixedRateCallable(0, 3000, { t == t }, false)
         }
 
         1.upto(cancel, { t ->
@@ -103,19 +103,19 @@ class FixedRateRunnableSpec extends Specification {
         29999 | 20000
     }
 
-    def "Start max amount of runnables and has expected result"() {
+    def "Start max amount of callables and has expected result"() {
         when:
         50000.times { t ->
-            executor.scheduleFixedRateRunnable(0, 1000, { t == t }, false)
+            executor.scheduleFixedRateCallable(0, 1000, { t == t }, false)
         }
         then:
         notThrown(Exception)
     }
 
-    def "Start greater than max amount of runnables and has expected result"() {
+    def "Start greater than max amount of callables and has expected result"() {
         when:
         50001.times { t ->
-            executor.scheduleFixedRateRunnable(0, 1000, { t == t }, false)
+            executor.scheduleFixedRateCallable(0, 1000, { t == t }, false)
         }
         then:
         Exception e = thrown()

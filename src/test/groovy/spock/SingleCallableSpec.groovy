@@ -11,7 +11,7 @@ class SingleCallableSpec extends Specification {
     RxJavaExecutor executor
 
     def setup() {
-        println "Setuping up new RxJavaExecutor"
+        println "Setting up new RxJavaExecutor"
         executor = new RxJavaExecutor("spock", 1, null)
     }
 
@@ -26,7 +26,7 @@ class SingleCallableSpec extends Specification {
         executor.getIdPoolSize() == 1000
         executor.getComputationScheduler() != null
         executor.getIoScheduler() != null
-        executor.getMainScheduer() != null
+        executor.getMainScheduler() != null
         executor.getSingleScheduler() != null
     }
 
@@ -168,6 +168,5 @@ class SingleCallableSpec extends Specification {
         Exception e = thrown()
         e.message == "Exception: No IDs are available."
     }
-
 
 }
