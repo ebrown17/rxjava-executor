@@ -25,7 +25,6 @@ import util.NamedThreadFactory;
 
 public class RxJavaExecutor {
   private Logger logger;
-  private ThreadFactory namedThreadFactory;
   private ExecutorService namedExecutor;
   private SingleScheduler singleScheduler;
   private ComputationScheduler computationScheduler;
@@ -53,7 +52,6 @@ public class RxJavaExecutor {
     idGenerator = new IdGenerator(name, 0, 0);
 
     if (executorOverride == null) {
-      namedThreadFactory = new NamedThreadFactory(name);
       namedExecutor =
               new ThreadPoolExecutor(
                       numberOfThreads,
@@ -61,7 +59,7 @@ public class RxJavaExecutor {
                       0L,
                       TimeUnit.MILLISECONDS,
                       new LinkedBlockingQueue<Runnable>(),
-                      namedThreadFactory);
+                      new NamedThreadFactory(name));
       mainScheduler = Schedulers.from(namedExecutor);
     } else {
       mainScheduler = Schedulers.from(executorOverride);
