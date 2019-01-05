@@ -33,7 +33,7 @@ public class IdGenerator {
       POOL_INCREMENT_SIZE = 1000;
       MAX_ID = 50000;
     } else {
-      if ((poolIncSize * 2) >= maxSize) {
+      if ((poolIncSize * 2) > maxSize) {
         POOL_INCREMENT_SIZE = 1000;
         MAX_ID = 50000;
       } else {
@@ -115,6 +115,10 @@ public class IdGenerator {
 
   public Integer getIdentityPoolSize() {
     return identityPool.size();
+  }
+
+  public Integer getPoolMaxSize() {
+    return MAX_ID;
   }
 
   public Integer getIdentitiesInUseSize() {
