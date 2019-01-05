@@ -67,7 +67,7 @@ public class IdGenerator {
         return id;
       }
     }
-    throw new Exception("Exception: No IDs are available.");
+    throw new Exception("Exception: No IDs are available. Current: " + getIdentitiesInUseSize() + " Max: " + MAX_ID);
   }
 
   /**
@@ -86,7 +86,7 @@ public class IdGenerator {
         identityPool.add(lowestUnassignedID++);
       } else {
         if (identityInUse.size() + identityPool.size() >= MAX_ID) {
-          throw new Exception("Exception: No IDs are available.");
+          throw new Exception("Exception: No IDs are available. Current: " + getIdentitiesInUseSize() + " Max: " + MAX_ID);
         } else {
           for (int j = 1; j < MAX_ID; j++) {
             if (!identityPool.contains(j) && !identityInUse.contains(j)) {
@@ -94,7 +94,7 @@ public class IdGenerator {
               return;
             }
           }
-          throw new Exception("Exception: No IDs are available.");
+          throw new Exception("Exception: No IDs are available. Current: " + getIdentitiesInUseSize() + " Max: " + MAX_ID);
         }
       }
     }
@@ -115,10 +115,6 @@ public class IdGenerator {
 
   public Integer getIdentityPoolSize() {
     return identityPool.size();
-  }
-
-  public Integer getPoolMaxSize() {
-    return MAX_ID;
   }
 
   public Integer getIdentitiesInUseSize() {

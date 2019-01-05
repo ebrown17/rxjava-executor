@@ -166,7 +166,7 @@ class SingleCallableSpec extends Specification {
         }
         then:
         Exception e = thrown()
-        e.message == "Exception: No IDs are available."
+        e.message.contains("Exception: No IDs are available.")
     }
 
 }
