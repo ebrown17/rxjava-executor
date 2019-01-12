@@ -10,12 +10,10 @@ class FixedRateCallableSpec extends Specification {
     RxJavaExecutor executor
 
     def setup() {
-        println "Setting up new RxJavaExecutor"
         executor = new RxJavaExecutor("spock", 1, null)
     }
 
     def cleanup() {
-        println "Cleaning up RxJavaExecutor"
         executor.shutdownExecutor()
     }
 
@@ -75,7 +73,6 @@ class FixedRateCallableSpec extends Specification {
         })
 
         def expectedPoolSize = (ids % 1000) == 0 ? 1000 : (1000 - (ids % 1000)) + cancel
-        println "ids ${ids} canceled: ${cancel} size: ${expectedPoolSize}"
         executor.getIdsInUseSize() == ids - cancel
         executor.countOfScheduledDisposables() == ids - cancel
         executor.getIdPoolSize() == expectedPoolSize

@@ -10,12 +10,10 @@ class FixedRateRunnableSpec extends Specification {
     RxJavaExecutor executor
 
     def setup() {
-        println "Setting up new RxJavaExecutor"
         executor = new RxJavaExecutor("spock", 1, null)
     }
 
     def cleanup() {
-        println "Cleaning up RxJavaExecutor"
         executor.shutdownExecutor()
     }
 
@@ -65,17 +63,18 @@ class FixedRateRunnableSpec extends Specification {
 
     def "Starts a large amount of fixed rate runnables; cancels some and has expected values after"() {
         expect:
-
         ids.times { t ->
             executor.scheduleFixedRateRunnable(0, 3000, { t == t }, false)
         }
+
+        Thread.sleep(200)
 
         1.upto(cancel, { t ->
             executor.cancelScheduledDisposable(t)
         })
 
         def expectedPoolSize = (ids % 1000) == 0 ? 1000 : (1000 - (ids % 1000)) + cancel
-        println "ids ${ids} canceled: ${cancel} size: ${expectedPoolSize}"
+        // println "ids ${ids} canceled: ${cancel} size: ${expectedPoolSize}"
         executor.getIdsInUseSize() == ids - cancel
         executor.countOfScheduledDisposables() == ids - cancel
         executor.getIdPoolSize() == expectedPoolSize

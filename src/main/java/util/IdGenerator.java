@@ -18,13 +18,13 @@ public class IdGenerator {
    * size is reached which by default 50K. Both the pool increment size and the max size can be
    * overridden.
    *
-   * @param name        to be used for this generator.
+   * @param name to be used for this generator.
    * @param poolIncSize the amount to increase the id pool by when pool is filled. Setting <= 0 will
-   *                    mean use default of 1000. If this is set, it must be <= half of maxSize and maxSize must
-   *                    also not be 0; or default values will be used.
-   * @param maxSize     of the id pool for this generator. Setting <= 0 will mean use default of 50K. If
-   *                    set, it must be >= 2 times poolIncSize and poolIncSize must not be 0; or default values
-   *                    will be used.
+   *     mean use default of 1000. If this is set, it must be <= half of maxSize and maxSize must
+   *     also not be 0; or default values will be used.
+   * @param maxSize of the id pool for this generator. Setting <= 0 will mean use default of 50K. If
+   *     set, it must be >= 2 times poolIncSize and poolIncSize must not be 0; or default values
+   *     will be used.
    */
   public IdGenerator(String name, int poolIncSize, int maxSize) {
     this.name = name;
@@ -54,7 +54,7 @@ public class IdGenerator {
    * @return Int id of next available identity
    * @throws Exception thrown when no id's available.
    */
-  public Integer getNewId() throws Exception {
+  public synchronized Integer getNewId() throws Exception {
     if (!identityPool.isEmpty()) {
       Integer id = identityPool.pop();
       identityInUse.add(id);
@@ -67,13 +67,19 @@ public class IdGenerator {
         return id;
       }
     }
-    throw new Exception("Exception: No IDs are available. Current: " + getIdentitiesInUseSize() + " Max: " + MAX_ID);
+    throw new Exception(
+        "Exception: No IDs are available. In Use: "
+            + identityInUse.size()
+            + " Pool Size: "
+            + identityPool.size()
+            + " Max: "
+            + MAX_ID);
   }
 
   /**
    * @param id to be returned to the identity pool
    */
-  public void recycleId(Integer id) {
+  public synchronized void recycleId(Integer id) {
     if (identityInUse.contains(id)) {
       identityInUse.remove(id);
       identityPool.add(id);
@@ -84,17 +90,38 @@ public class IdGenerator {
     for (int i = 0; i < POOL_INCREMENT_SIZE; i++) {
       if (lowestUnassignedID <= MAX_ID) {
         identityPool.add(lowestUnassignedID++);
-      } else {
-        if (identityInUse.size() + identityPool.size() >= MAX_ID) {
-          throw new Exception("Exception: No IDs are available. Current: " + getIdentitiesInUseSize() + " Max: " + MAX_ID);
-        } else {
-          for (int j = 1; j < MAX_ID; j++) {
+        if (lowestUnassignedID > MAX_ID) {
+          return;
+        }
+      }
+      else {
+        if (identityInUse.size() + identityPool.size() > MAX_ID) {
+          throw new Exception(
+              "Exception: No IDs are available. In Use: "
+                  + identityInUse.size()
+                  + " Pool Size: "
+                  + identityPool.size()
+                  + " Max: "
+                  + MAX_ID
+                  + " lowest unassigned "
+                  + lowestUnassignedID);
+        }
+        else {
+          for (int j = 1; j <= MAX_ID; j++) {
             if (!identityPool.contains(j) && !identityInUse.contains(j)) {
               identityPool.add(j);
               return;
             }
           }
-          throw new Exception("Exception: No IDs are available. Current: " + getIdentitiesInUseSize() + " Max: " + MAX_ID);
+          throw new Exception(
+              "Exception: No IDs are available. In Use: "
+                  + identityInUse.size()
+                  + " Pool Size: "
+                  + identityPool.size()
+                  + " Max: "
+                  + MAX_ID
+                  + " lowest unassigned "
+                  + lowestUnassignedID);
         }
       }
     }
@@ -103,14 +130,14 @@ public class IdGenerator {
   @Override
   public String toString() {
     return "Identity [name="
-            + name
-            + ", identityPool="
-            + identityPool.size()
-            + ", identityInUse="
-            + identityInUse.size()
-            + ", lowestUnassignedID="
-            + lowestUnassignedID
-            + "]";
+        + name
+        + ", identityPool="
+        + identityPool.size()
+        + ", identityInUse="
+        + identityInUse.size()
+        + ", lowestUnassignedID="
+        + lowestUnassignedID
+        + "]";
   }
 
   public Integer getIdentityPoolSize() {

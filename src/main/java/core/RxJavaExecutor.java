@@ -310,7 +310,7 @@ public class RxJavaExecutor {
    * program will exit.
    */
   public void shutdownExecutor() {
-    logger.info("Shutdown called, stopping all related schedulers and executor");
+    logger.debug("Shutdown called, stopping all related schedulers and executor");
     mainScheduler.shutdown();
     singleScheduler.shutdown();
     computationScheduler.shutdown();
